@@ -1,0 +1,4 @@
+mlx-mtp is an independent implementation.
+
+It is inspired by the public architecture and behavior of MTPLX, but does
+not import MTPLX at runtime and does not include MTPLX source code.

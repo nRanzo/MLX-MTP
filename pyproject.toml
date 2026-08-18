@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlx-mtp"
+version = "0.1.0"
+description = "Minimal native-MTP speculative decoding runtime for Apple Silicon"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+dependencies = ["mlx>=0.29", "mlx-lm>=0.30", "numpy>=1.26"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "safetensors>=0.5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.setuptools.packages.find]
+include = ["mlx_mtp*"]

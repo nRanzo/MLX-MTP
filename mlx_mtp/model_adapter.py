@@ -1,0 +1,16 @@
+"""Small boundary between the decoder and model-family-specific internals."""
+from abc import ABC, abstractmethod
+from typing import Any
+
+class MTPModelAdapter(ABC):
+    @abstractmethod
+    def forward(self, input_ids: Any, cache: Any = None, return_hidden: bool = False): ...
+    @abstractmethod
+    def mtp_forward(self, hidden_states: Any, next_token_ids: Any, cache: Any = None,
+                    position_offset: int | None = None, return_hidden: bool = False): ...
+    @abstractmethod
+    def make_target_cache(self) -> Any: ...
+    @abstractmethod
+    def make_mtp_cache(self) -> Any: ...
+    @abstractmethod
+    def clone_cache(self, cache: Any) -> Any: ...
