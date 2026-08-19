@@ -2,17 +2,50 @@
 
 Minimal native-MTP speculative decoding for Apple Silicon.
 
-MLX-MTP runs a model's internal multi-token-prediction (MTP) head with MLX:
-there is no external draft model. It uses probability-ratio rejection sampling
-and residual correction, so stochastic decoding preserves the target
-distribution when draft and target use the same sampler.
+MLX-MTP runs a model's internal multi-token-prediction (MTP) head with MLX,
+without an external draft model.
 
 **Current scope:** Qwythos 9B OptiQ only, with its one physical MTP layer.
 The package is structured for additional adapters, but no other checkpoint is
 supported yet.
 
 MLX-MTP is an independent implementation inspired by and numerically validated
-against MTPLX. It neither imports MTPLX nor requires it at runtime.
+against the MTPLX oracle. It neither imports MTPLX nor requires it at runtime.
+
+## Results
+
+MTPLX Forge generated an MTP-enabled MLX variant of the Qwythos 9B OptiQ
+checkpoint and verified the following result. This is a Forge verification
+result, not a throughput benchmark independently reproduced by this
+repository's benchmark harness.
+
+| Configuration | Throughput |
+| --- | ---: |
+| Autoregressive baseline | 36.3 tok/s |
+| MTP D2 | 67.1 tok/s |
+| Speedup | **1.85x** |
+
+The mean acceptance rate was 93% at D2, measured on an Apple M4 Pro running
+macOS 26.6.2 (arm64), with temperature 0.6, top_p 0.95, and top_k 20.
+
+## Forged model
+
+The public [MTP-enabled Qwythos model on Hugging Face](https://huggingface.co/nRanzo/mlx-community-Qwythos-9B-v2-OptiQ-4bit-MTPLX)
+was generated with MTPLX Forge from
+`mlx-community/Qwythos-9B-v2-OptiQ-4bit`. It provides the distributable
+MTP-enabled artifact corresponding to the Forge verification described above.
+
+MLX-MTP provides the independent native MLX implementation, technical details,
+and tests in this repository. MTPLX is the runtime/oracle used for optional
+numerical validation, while MTPLX Forge produced and benchmarked the public
+MTP-enabled model.
+
+## What MLX-MTP implements
+
+MLX-MTP runs the model's internal MTP head with MLX, without an external draft
+model. It uses probability-ratio rejection sampling and residual correction so
+stochastic decoding preserves the target distribution when draft and target
+use the same sampler, and targets Apple Silicon.
 
 ## Requirements
 
@@ -24,7 +57,8 @@ against MTPLX. It neither imports MTPLX nor requires it at runtime.
 The initial checkpoint is `mlx-community/Qwythos-9B-v2-OptiQ-4bit`. This
 project intentionally does not download, modify, redistribute, or include it.
 The loader currently accepts a **local checkpoint directory**, not a Hugging
-Face model ID.
+Face model ID. This repository does not contain model weights; the Forge model
+is published separately on [Hugging Face](https://huggingface.co/nRanzo/mlx-community-Qwythos-9B-v2-OptiQ-4bit-MTPLX).
 
 ## Install
 
@@ -140,7 +174,20 @@ python benchmarks/compare.py \
   --tokens 256
 ```
 
-No benchmark result is claimed or published by this repository yet.
+The repository provides this harness for paired local AR/MTP runs. The
+published 1.85x result above comes from the MTPLX Forge verification run; this
+README does not claim that `benchmarks/compare.py` independently produced it.
+When reproducing performance, use the same machine, model, prompt, and sampling
+settings for both runs.
+
+### Published Forge benchmark
+
+The Forge-verified result used the MTP-enabled Qwythos 9B v2 OptiQ 4-bit model
+at D2 on an Apple M4 Pro running macOS 26.6.2 (arm64), with temperature 0.6,
+top_p 0.95, and top_k 20. It measured 67.1 tok/s versus 36.3 tok/s for the
+autoregressive baseline (1.85x), with 93% mean acceptance. This result is
+configuration-specific and should not be generalized to other models, prompts,
+samplers, or Apple Silicon devices.
 
 ## Limitations
 
@@ -148,8 +195,10 @@ No benchmark result is claimed or published by this repository yet.
 - One physical MTP layer; `depth > 1` is rejected rather than approximated.
 - Local model directories only; remote IDs, server/API, graph compilation, and
   custom Metal kernels are intentionally out of scope.
-- The current cache-correction path prioritizes correctness; profile it before
-  claiming speedups.
+- The cache-correction path prioritizes correctness. The published 1.85x
+  result is a Forge-verified result on the specified hardware and configuration
+  and should not be generalized to all models, prompts, samplers, or Apple
+  Silicon devices.
 - MTPLX parity is an optional local-development check, not a CI requirement.
 
 See [Qwythos weight mapping](docs/qwythos.md),
